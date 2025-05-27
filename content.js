@@ -1,7 +1,7 @@
 const CONTACT_NAME = "Equatorial Energia Piauí";
 
 const MESSAGES = [
-  "bom dia",                  // Saudação inicial (bot responde com menu)
+  "bom dia",              // Saudação inicial (bot responde com menu)
   "4",                    // Escolher "Consulta de Débitos" (4)
   "79123716304",          // Enviar CPF
   "2",                    // Escolher imóvel nº 2
