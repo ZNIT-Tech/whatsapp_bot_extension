@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Automatizador WhatsApp Equatorial",
+  "version": "1.0",
+  "description": "Envia mensagens automatizadas para o bot da Equatorial no WhatsApp Web.",
+  "permissions": ["scripting", "activeTab"],
+  "host_permissions": ["https://web.whatsapp.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://web.whatsapp.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {
+    "default_title": "Automatizar Equatorial"
+  }
+}
