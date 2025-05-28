@@ -1,17 +1,15 @@
 // Número da Equatorial Energia Piauí
 const PHONE_NUMBER = "558632288200";
-const MENSAGEM_INICIAL = "bom dia";
-
 const MESSAGES = [
-  "bom dia",              // Saudação inicial (bot responde com menu)
-  "4",                    // Escolher "Consulta de Débitos" (4)
-  "79123716304",          // Enviar CPF
-  "2",                    // Escolher imóvel nº 2
-  "2",                    // Escolher conta nº 2
-  "Pagar boleto",         // Escolher forma de pagamento
-  "7912",                 // Validar com 4 primeiros dígitos do CPF
-  "Não",                  // Responder que não quer receber outra conta
-  "5"                     // Avaliação da conversa (muito bom)
+  "bom dia",
+  "4",
+  "79123716304",
+  "2",
+  "2",
+  "Pagar boleto",
+  "7912",
+  "Não",
+  "5"
 ];
 
 let messageIndex = 0;
@@ -30,16 +28,15 @@ function waitForWhatsAppToLoad() {
   }
 }
 
-// 2. Envia uma mensagem no campo de texto
-function sendMessage(text) {
-  const messageBox = document.querySelector("div[contenteditable='true'][data-tab='10'][role='textbox']");
+// 2. Digita e envia a mensagem com atrasos entre as ações
+function typeAndSendMessage(text) {
+  const messageBox = document.querySelector("div[contenteditable='true'][data-tab='10']");
   if (!messageBox) {
     console.error("⛔ Caixa de mensagem não encontrada.");
-    return false;
+    return;
   }
 
   messageBox.focus();
-  // Insere o texto simulando digitação
   const inputEvent = new InputEvent('input', {
     bubbles: true,
     cancelable: true,
@@ -50,54 +47,46 @@ function sendMessage(text) {
   messageBox.textContent = text;
   messageBox.dispatchEvent(inputEvent);
 
-  const sendButton = document.querySelector("button[aria-label='Send']");
-  if (sendButton) {
-    sendButton.click();
-    console.log(`✅ Mensagem enviada: "${text}"`);
-    return true;
-  }
-
-  console.error("⛔ Botão de enviar mensagem não encontrado.");
-  return false;
+  // Espera 1 segundo para o botão "enviar" ficar ativo
+  setTimeout(() => {
+    const sendButton = document.querySelector("button[data-tab='11']");
+    if (sendButton) {
+      sendButton.click();
+      console.log(`✅ Mensagem enviada: "${text}"`);
+    } else {
+      console.error("⛔ Botão de enviar mensagem não encontrado.");
+    }
+  }, 1000);
 }
 
-// 3. Espera o chat carregar e começa a observar para enviar as mensagens
-function waitForChatAndObserve() {
+// 3. Espera o chat carregar e começa a enviar mensagens com intervalo
+function waitForChatAndSend() {
   const chat = document.querySelector("#main");
   if (!chat) {
     console.log("⏳ Aguardando área de chat carregar...");
-    setTimeout(waitForChatAndObserve, 1000);
+    setTimeout(waitForChatAndSend, 1000);
     return;
   }
 
-  console.log("✅ Área de chat carregada. Iniciando observador...");
+  console.log("✅ Área de chat carregada. Iniciando envio...");
 
-  const observer = new MutationObserver(() => {
-    if (timeoutId) clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => {
-      if (messageIndex < MESSAGES.length) {
-        sendMessage(MESSAGES[messageIndex]);
-        messageIndex++;
-      } else {
-        console.log("✅ Todas as mensagens foram enviadas.");
-        observer.disconnect();
-      }
-    }, 3000);
-  });
+  const sendNextMessage = () => {
+    if (messageIndex < MESSAGES.length) {
+      typeAndSendMessage(MESSAGES[messageIndex]);
+      messageIndex++;
+      timeoutId = setTimeout(sendNextMessage, 4000); // Espera 4s antes da próxima mensagem
+    } else {
+      console.log("✅ Todas as mensagens foram enviadas.");
+    }
+  };
 
-  observer.observe(chat, { childList: true, subtree: true });
-
-  // Envia a primeira mensagem
-  setTimeout(() => {
-    sendMessage(MESSAGES[messageIndex]);
-    messageIndex++;
-  }, 3000);
+  // Envia a primeira mensagem após 3s
+  setTimeout(sendNextMessage, 3000);
 }
 
 // 4. Decide o que fazer com base na URL atual
 if (!window.location.href.includes("/send?phone=")) {
   waitForWhatsAppToLoad();
 } else {
-  // Já estamos na conversa, aguarda o chat carregar e começa o processo
-  waitForChatAndObserve();
+  waitForChatAndSend();
 }
