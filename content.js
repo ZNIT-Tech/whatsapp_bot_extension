@@ -1,21 +1,21 @@
-// Número da Equatorial Energia Piauí
 const PHONE_NUMBER = "558632288200";
 const MESSAGES = [
-  "bom dia",
-  "4",
-  "79123716304",
-  "2",
-  "2",
-  "Pagar boleto",
-  "7912",
-  "Não",
-  "5"
+  "Bom dia",           // espera 19s
+  "6",                 // espera 18s
+  "79123716304",       // espera 18s
+  "2",                 // espera 17s
+  "1",                 // espera 18s
+  "Pagar boleto",      // espera 18s
+  "7912",              // espera 18s
+  "Não",               // espera 17s
+  "Não",               // espera 17s
+  "3"                  // avaliação final
 ];
 
-let messageIndex = 0;
-let timeoutId = null;
+const DELAYS = [19000, 18000, 18000, 17000, 18000, 18000, 18000, 17000, 17000, 17000];
 
-// 1. Espera o WhatsApp Web carregar e redireciona para a conversa
+let messageIndex = 0;
+
 function waitForWhatsAppToLoad() {
   const appElement = document.querySelector("#app");
   if (appElement) {
@@ -28,7 +28,6 @@ function waitForWhatsAppToLoad() {
   }
 }
 
-// 2. Digita e envia a mensagem com atrasos entre as ações
 function typeAndSendMessage(text) {
   const messageBox = document.querySelector("div[contenteditable='true'][data-tab='10']");
   if (!messageBox) {
@@ -47,7 +46,6 @@ function typeAndSendMessage(text) {
   messageBox.textContent = text;
   messageBox.dispatchEvent(inputEvent);
 
-  // Espera 1 segundo para o botão "enviar" ficar ativo
   setTimeout(() => {
     const sendButton = document.querySelector("button[data-tab='11']");
     if (sendButton) {
@@ -59,7 +57,6 @@ function typeAndSendMessage(text) {
   }, 1000);
 }
 
-// 3. Espera o chat carregar e começa a enviar mensagens com intervalo
 function waitForChatAndSend() {
   const chat = document.querySelector("#main");
   if (!chat) {
@@ -68,23 +65,22 @@ function waitForChatAndSend() {
     return;
   }
 
-  console.log("✅ Área de chat carregada. Iniciando envio...");
+  console.log("✅ Área de chat carregada. Iniciando envio com tempos ajustados...");
 
   const sendNextMessage = () => {
     if (messageIndex < MESSAGES.length) {
       typeAndSendMessage(MESSAGES[messageIndex]);
+      const waitTime = DELAYS[messageIndex];
       messageIndex++;
-      timeoutId = setTimeout(sendNextMessage, 4000); // Espera 4s antes da próxima mensagem
+      setTimeout(sendNextMessage, waitTime);
     } else {
       console.log("✅ Todas as mensagens foram enviadas.");
     }
   };
 
-  // Envia a primeira mensagem após 3s
   setTimeout(sendNextMessage, 3000);
 }
 
-// 4. Decide o que fazer com base na URL atual
 if (!window.location.href.includes("/send?phone=")) {
   waitForWhatsAppToLoad();
 } else {
