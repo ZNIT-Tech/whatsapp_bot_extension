@@ -4,7 +4,7 @@ const MESSAGES = [
   "6",                 // espera 18s
   "79123716304",       // espera 18s
   "2",                 // espera 17s
-  "1",                 // espera 18s
+  "2",                 // espera 18s
   "Pagar boleto",      // espera 18s
   "7912",              // espera 18s -> aqui o arquivo chega, vamos disparar o clique para download
   "Não",               // espera 17s
@@ -60,7 +60,7 @@ function typeAndSendMessage(text) {
 // Função que clica no botão de download do PDF, tentando encontrar o botão
 function clickDownloadButton() {
   // Aqui uso o seletor que busca a span com data-icon e clica no pai div
-  const downloadSpan = document.querySelector("span[data-icon='audio-download']");
+  const downloadSpan = document.querySelector("span[data-icon='document-PDF-icon']");
   if (downloadSpan && downloadSpan.parentElement) {
     downloadSpan.parentElement.click();
     console.log("✅ Botão de download clicado.");
