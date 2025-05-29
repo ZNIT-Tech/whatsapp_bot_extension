@@ -6,7 +6,7 @@ const MESSAGES = [
   "2",                 // espera 17s
   "1",                 // espera 18s
   "Pagar boleto",      // espera 18s
-  "7912",              // espera 18s
+  "7912",              // espera 18s -> aqui o arquivo chega, vamos disparar o clique para download
   "Não",               // espera 17s
   "Não",               // espera 17s
   "3"                  // avaliação final
@@ -57,6 +57,18 @@ function typeAndSendMessage(text) {
   }, 1000);
 }
 
+// Função que clica no botão de download do PDF, tentando encontrar o botão
+function clickDownloadButton() {
+  // Aqui uso o seletor que busca a span com data-icon e clica no pai div
+  const downloadSpan = document.querySelector("span[data-icon='audio-download']");
+  if (downloadSpan && downloadSpan.parentElement) {
+    downloadSpan.parentElement.click();
+    console.log("✅ Botão de download clicado.");
+  } else {
+    console.log("⛔ Botão de download não encontrado.");
+  }
+}
+
 function waitForChatAndSend() {
   const chat = document.querySelector("#main");
   if (!chat) {
@@ -70,6 +82,15 @@ function waitForChatAndSend() {
   const sendNextMessage = () => {
     if (messageIndex < MESSAGES.length) {
       typeAndSendMessage(MESSAGES[messageIndex]);
+      
+      // Se a mensagem enviada for "7912" (índice 6), após o delay, tentar clicar no botão de download
+      if (MESSAGES[messageIndex] === "7912") {
+        // Aguarda o tempo da mensagem + 3s para o botão aparecer e tenta clicar
+        setTimeout(() => {
+          clickDownloadButton();
+        }, DELAYS[messageIndex] + 3000);
+      }
+      
       const waitTime = DELAYS[messageIndex];
       messageIndex++;
       setTimeout(sendNextMessage, waitTime);
