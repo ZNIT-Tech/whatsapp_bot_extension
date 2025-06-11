@@ -25,18 +25,30 @@ const FLOW = {
     nextState: "ESCOLHER_CONTA"
   },
   ESCOLHER_CONTA: {
-    condition: (msg) => msg.includes("Qual conta você quer receber"),
+    condition: (msg) => msg.includes("Qual conta você quer receber agora?"),
     action: (msg) => {
-      const regex = new RegExp(`(\\d+)\\s*-\\s*Referência:\\s*${CLIENTE.referencia}`, "i");
-      const match = msg.match(regex);
-      if (match) {
-        const opcao = match[1];
-        console.log(`✅ Referência "${CLIENTE.referencia}" encontrada. Enviando opção: ${opcao}`);
-        return opcao;
-      } else {
-        console.warn(`⚠️ Referência "${CLIENTE.referencia}" não encontrada na mensagem.`);
-        return null;
-      }
+      const container = Array.from(document.querySelectorAll("div.message-in")).pop();
+      const blocks = container.querySelectorAll("span.copyable-text");
+
+      let currentOption = null;
+      let referenceFound = null;
+
+      blocks.forEach((span) => {
+        const text = span.innerText.trim();
+
+        // Detecta o número da opção
+        const matchOption = text.match(/^(\d+)\s*-\s*$/);
+        if (matchOption) {
+          currentOption = matchOption[1]; // salva o número como "1"
+        }
+
+        // Detecta a referência
+        if (text.includes("Referência") && text.includes(CLIENTE.referencia)) {
+          referenceFound = currentOption;
+        }
+      });
+
+      return referenceFound || "1"; // fallback para 1
     },
     nextState: "FINAL"
   },
