@@ -1,109 +1,69 @@
-const PHONE_NUMBER = "558632288200";
-const MESSAGES = [
-  "Bom dia",           // espera 19s
-  "6",                 // espera 18s
-  "79123716304",       // espera 18s
-  "2",                 // espera 17s
-  "2",                 // espera 18s
-  "Pagar boleto",      // espera 18s
-  "7912",              // espera 18s -> aqui o arquivo chega, vamos disparar o clique para download
-  "Não",               // espera 17s
-  "Não",               // espera 17s
-  "3"                  // avaliação final
-];
+// ==UserScript==
+// @name         Redirecionar para Equatorial e Ler Última Mensagem
+// @namespace    http://tampermonkey.net/
+// @version      1.0
+// @description  Vai direto para o chat da Equatorial e permite ler a última mensagem recebida
+// @match        https://web.whatsapp.com/*
+// @grant        none
+// ==/UserScript==
 
-const DELAYS = [19000, 18000, 18000, 17000, 18000, 18000, 18000, 17000, 17000, 17000];
+(function () {
+  'use strict';
 
-let messageIndex = 0;
+  const PHONE_NUMBER = "558632288200";
+  const CHAT_URL = `https://web.whatsapp.com/send?phone=${PHONE_NUMBER}`;
 
-function waitForWhatsAppToLoad() {
-  const appElement = document.querySelector("#app");
-  if (appElement) {
-    console.log("✅ WhatsApp Web carregado. Redirecionando...");
-    const url = `https://web.whatsapp.com/send?phone=${PHONE_NUMBER}`;
-    window.location.href = url;
-  } else {
-    console.log("⏳ Aguardando WhatsApp carregar...");
-    setTimeout(waitForWhatsAppToLoad, 1000);
-  }
-}
-
-function typeAndSendMessage(text) {
-  const messageBox = document.querySelector("div[contenteditable='true'][data-tab='10']");
-  if (!messageBox) {
-    console.error("⛔ Caixa de mensagem não encontrada.");
-    return;
-  }
-
-  messageBox.focus();
-  const inputEvent = new InputEvent('input', {
-    bubbles: true,
-    cancelable: true,
-    data: text,
-    inputType: 'insertText'
-  });
-
-  messageBox.textContent = text;
-  messageBox.dispatchEvent(inputEvent);
-
-  setTimeout(() => {
-    const sendButton = document.querySelector("button[data-tab='11']");
-    if (sendButton) {
-      sendButton.click();
-      console.log(`✅ Mensagem enviada: "${text}"`);
-    } else {
-      console.error("⛔ Botão de enviar mensagem não encontrado.");
-    }
-  }, 1000);
-}
-
-// Função que clica no botão de download do PDF, tentando encontrar o botão
-function clickDownloadButton() {
-  // Aqui uso o seletor que busca a span com data-icon e clica no pai div
-  const downloadSpan = document.querySelector("span[data-icon='document-PDF-icon']");
-  if (downloadSpan && downloadSpan.parentElement) {
-    downloadSpan.parentElement.click();
-    console.log("✅ Botão de download clicado.");
-  } else {
-    console.log("⛔ Botão de download não encontrado.");
-  }
-}
-
-function waitForChatAndSend() {
-  const chat = document.querySelector("#main");
-  if (!chat) {
-    console.log("⏳ Aguardando área de chat carregar...");
-    setTimeout(waitForChatAndSend, 1000);
-    return;
-  }
-
-  console.log("✅ Área de chat carregada. Iniciando envio com tempos ajustados...");
-
-  const sendNextMessage = () => {
-    if (messageIndex < MESSAGES.length) {
-      typeAndSendMessage(MESSAGES[messageIndex]);
-      
-      // Se a mensagem enviada for "7912" (índice 6), após o delay, tentar clicar no botão de download
-      if (MESSAGES[messageIndex] === "7912") {
-        // Aguarda o tempo da mensagem + 3s para o botão aparecer e tenta clicar
-        setTimeout(() => {
-          clickDownloadButton();
-        }, DELAYS[messageIndex] + 3000);
+  // Redireciona automaticamente quando o WhatsApp estiver pronto
+  function waitForWhatsAppToLoad() {
+    const appElement = document.querySelector("#app");
+    if (appElement) {
+      if (!window.location.href.includes(PHONE_NUMBER)) {
+        console.log("✅ WhatsApp Web carregado. Redirecionando para Equatorial...");
+        window.location.href = CHAT_URL;
+      } else {
+        console.log("✅ Já estamos na conversa da Equatorial.");
+        initUI();
       }
-      
-      const waitTime = DELAYS[messageIndex];
-      messageIndex++;
-      setTimeout(sendNextMessage, waitTime);
     } else {
-      console.log("✅ Todas as mensagens foram enviadas.");
+      console.log("⏳ Aguardando WhatsApp carregar...");
+      setTimeout(waitForWhatsAppToLoad, 1000);
     }
-  };
+  }
 
-  setTimeout(sendNextMessage, 3000);
-}
+  // Adiciona botão para ler última mensagem recebida
+  function initUI() {
+    // Evita adicionar botão mais de uma vez
+    if (document.getElementById("ler-ultima-msg-btn")) return;
 
-if (!window.location.href.includes("/send?phone=")) {
+    const button = document.createElement("button");
+    button.id = "ler-ultima-msg-btn";
+    button.innerText = "📩 Ler última mensagem";
+    button.style.position = "fixed";
+    button.style.top = "20px";
+    button.style.right = "20px";
+    button.style.zIndex = "9999";
+    button.style.padding = "10px 15px";
+    button.style.backgroundColor = "#25D366";
+    button.style.color = "#fff";
+    button.style.border = "none";
+    button.style.borderRadius = "5px";
+    button.style.cursor = "pointer";
+    button.style.boxShadow = "0 2px 5px rgba(0,0,0,0.3)";
+    document.body.appendChild(button);
+
+    button.addEventListener("click", () => {
+      const messages = document.querySelectorAll("div.message-in");
+      if (!messages.length) {
+        alert("❌ Nenhuma mensagem recebida encontrada.");
+        return;
+      }
+
+      const last = messages[messages.length - 1];
+      const textSpan = last.querySelector("span.selectable-text span");
+      const message = textSpan?.innerText || "(sem texto)";
+      alert("📨 Última mensagem recebida:\n\n" + message);
+    });
+  }
+
   waitForWhatsAppToLoad();
-} else {
-  waitForChatAndSend();
-}
+})();
