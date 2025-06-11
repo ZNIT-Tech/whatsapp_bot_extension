@@ -2,9 +2,9 @@ const PHONE_NUMBER = "558632288200";
 
 // Dados do cliente alvo
 const CLIENTE = {
-  cpfCnpj: "12345678900",
+  cpfCnpj: "79123716304",
   nascimentoOuEmail: "01/01/1990",
-  contaContrato: "2"
+  contaContrato: "000014832690"
 };
 
 // Máquina de estados
@@ -17,6 +17,27 @@ const FLOW = {
   PEDIR_DOCUMENTO: {
     condition: (msg) => msg.includes(" informe o CPF ou CNPJ"),
     action: () => CLIENTE.cpfCnpj,
+    nextState: "PEDIR_CONTA_CONTRATO"
+  },
+  PEDIR_CONTA_CONTRATO: {
+    condition: (msg) => msg.includes("Digite o número do Contra Contrato"),
+    action: () => CLIENTE.contaContrato,
+    nextState: "ESCOLHER_CONTA"
+  },
+  ESCOLHER_CONTA: {
+    condition: (msg) => msg.includes("Qual conta você quer receber"),
+    action: (msg) => {
+      const regex = new RegExp(`(\\d+)\\s*-\\s*Referência:\\s*${CLIENTE.referencia}`, "i");
+      const match = msg.match(regex);
+      if (match) {
+        const opcao = match[1];
+        console.log(`✅ Referência "${CLIENTE.referencia}" encontrada. Enviando opção: ${opcao}`);
+        return opcao;
+      } else {
+        console.warn(`⚠️ Referência "${CLIENTE.referencia}" não encontrada na mensagem.`);
+        return null;
+      }
+    },
     nextState: "FINAL"
   },
   FINAL: {
