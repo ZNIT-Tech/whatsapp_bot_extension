@@ -50,6 +50,16 @@ const FLOW = {
 
       return referenceFound || "1"; // fallback para 1
     },
+    nextState: "OPCAO_PAGAMENTO"
+  },
+  OPCAO_PAGAMENTO: {
+    condition: (msg) => msg.includes("Posso te enviar essa conta por aqui"),
+    action: () => "Pagar boleto",
+    nextState: "VALIDAR"
+  },
+  VALIDAR: {
+    condition: (msg) => msg.includes("Digite os 4 primeiros dígitos do CPF ou CNPJ"),
+    action: () => CLIENTE.cpfCnpj.slice(0, 4),
     nextState: "FINAL"
   },
   FINAL: {
