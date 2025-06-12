@@ -43,7 +43,10 @@ const ACOES = [
   {
     condicao: msg =>
       msg.toLowerCase().includes("quer receber alguma outra conta"),
-    resposta: () => "Não"
+    resposta: () => {
+      clickDownloadButton();
+      return "Não";
+    }
   },
   {
     condicao: msg =>
@@ -191,7 +194,15 @@ function handleBotResponse() {
   setTimeout(handleBotResponse, 10000);
 }
 
-
+function clickDownloadButton() {
+  const downloadSpan = document.querySelector("span[data-icon='document-PDF-icon']");
+  if (downloadSpan && downloadSpan.parentElement) {
+    downloadSpan.parentElement.click();
+    console.log("✅ Botão de download clicado.");
+  } else {
+    console.log("⛔ Botão de download não encontrado.");
+  }
+}
 
 // Espera o chat abrir e inicia o fluxo
 function waitForChatAndStartFlow() {
