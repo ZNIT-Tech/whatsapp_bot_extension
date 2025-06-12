@@ -2,9 +2,9 @@ const PHONE_NUMBER = "558632288200"; // Substitua pelo número do bot
 
 // Dados do cliente (CPF ou CNPJ + info de validação)
 const CLIENTE = {
-  cpfCnpj: "19311135000104", // Pode ser CPF ou CNPJ
+  cpfCnpj: "79123716304", // Pode ser CPF ou CNPJ
   nascimentoOuEmail: "mcpapelaria@outlook.com", // Ou data de nascimento
-  contaContrato: "000014832690",
+  contaContrato: "3000614440",
   alvo: "05/2025"
 };
 
@@ -19,7 +19,6 @@ const ACOES = [
     condicao: msg =>
       msg.toLowerCase().includes("informe o cpf") ||
       msg.toLowerCase().includes("informe o cnpj") ||
-      msg.toLowerCase().includes("titular da conta") ||
       msg.toLowerCase().includes("conta contrato do imóvel"),
     resposta: () => CLIENTE.cpfCnpj
   },
@@ -55,7 +54,35 @@ const ACOES = [
     condicao: msg =>
       msg.toLowerCase().includes("ntes de encerrar, você pode me contar o que achou da nossa conversa"),
     resposta: () => "5"
-  } 
+  },
+  {
+    condicao: msg => msg.toLowerCase().includes("qual conta você quer receber agora"),
+    resposta: (msg) => {
+      const regex = /(\d+)\s*-\s*referência:\s*([\d/]+)/gi;
+      let match;
+      while ((match = regex.exec(msg)) !== null) {
+        const opcao = match[1];
+        const referencia = match[2];
+        if (referencia === CLIENTE.alvo) {
+          return opcao;  // Retorna o número da opção encontrada
+        }
+      }
+      // Se não encontrou, retorna mensagem padrão ou string vazia
+      console.log("⚠️ Nenhuma opção correspondente encontrada.");
+      return "1";
+    }
+  },
+  {
+    condicao: msg =>
+      msg.toLowerCase().includes("igite o número do contra contrato"),
+    resposta: () => CLIENTE.contaContrato
+  },
+  {
+    condicao: msg =>
+      msg.toLowerCase().includes("4 primeiros dígitos do CPF") ||
+      msg.toLowerCase().includes("os 4 primeiros dígitos"),
+    resposta: () => CLIENTE.cpfCnpj.slice(0, 4)
+  }
 ];
 
 // Espera e clica no botão de download do PDF
@@ -152,17 +179,19 @@ function handleBotResponse() {
   console.log(`📨 Última mensagem: "${message}"`);
 
   for (const acao of ACOES) {
-    if (acao.condicao(message)) {
-      const resposta = acao.resposta();
-      console.log("💬 Respondendo com:", resposta);
-      typeAndSendMessage(resposta);
-      break;
-    }
+  if (acao.condicao(message)) {
+    const resposta = acao.resposta(message); // <-- passa a mensagem aqui
+    console.log("💬 Respondendo com:", resposta);
+    typeAndSendMessage(resposta);
+    break;
   }
+}
 
   // Espera 10s para checar a próxima mensagem
   setTimeout(handleBotResponse, 10000);
 }
+
+
 
 // Espera o chat abrir e inicia o fluxo
 function waitForChatAndStartFlow() {
