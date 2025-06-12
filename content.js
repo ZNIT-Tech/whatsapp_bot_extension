@@ -1,98 +1,67 @@
-const PHONE_NUMBER = "558632288200";
+const PHONE_NUMBER = "558632288200"; // Substitua pelo número do bot
 
-// Dados do cliente alvo
+// Dados do cliente (CPF ou CNPJ + info de validação)
 const CLIENTE = {
-  cpfCnpj: "79123716304",
-  nascimentoOuEmail: "01/01/1990",
+  cpfCnpj: "19311135000104", // Pode ser CPF ou CNPJ
+  nascimentoOuEmail: "mcpapelaria@outlook.com", // Ou data de nascimento
   contaContrato: "000014832690",
-  alvo : "05/2025"
+  alvo: "05/2025"
 };
 
-// Máquina de estados
-const FLOW = {
-  INITIAL: {
-    condition: (msg) => msg.includes("Sobre o que você quer falar"),
-    action: () => "6",
-    nextState: "PEDIR_DOCUMENTO"
+// Ações baseadas na mensagem do bot
+const ACOES = [
+  {
+    condicao: msg =>
+      msg.toLowerCase().includes("obre o que você quer falar"),
+    resposta: () => "6"
   },
-  PEDIR_DOCUMENTO: {
-    condition: (msg) => msg.includes(" informe o CPF ou CNPJ"),
-    action: () => CLIENTE.cpfCnpj,
-    nextState: "PEDIR_CONTA_CONTRATO"
+  {
+    condicao: msg =>
+      msg.toLowerCase().includes("informe o cpf") ||
+      msg.toLowerCase().includes("informe o cnpj") ||
+      msg.toLowerCase().includes("titular da conta") ||
+      msg.toLowerCase().includes("conta contrato do imóvel"),
+    resposta: () => CLIENTE.cpfCnpj
   },
-  PEDIR_CONTA_CONTRATO: {
-    condition: (msg) => msg.includes("Digite o número do Contra Contrato"),
-    action: () => CLIENTE.contaContrato,
-    nextState: "ESCOLHER_CONTA"
+  {
+    condicao: msg =>
+      msg.toLowerCase().includes("é para esse imóvel que você deseja atendimento"),
+    resposta: () => "Sim"
   },
-  ESCOLHER_CONTA: {
-    condition: (msg) => msg.includes("Qual conta você quer receber agora?"),
-    action: (msg) => {
-      const regex = /(\d+)\s*-\s*Referência:\s*(\d{2}\/\d{4})/g;
-      let match;
-      let referenceFound = null;
+  {
+    condicao: msg =>
+      msg.toLowerCase().includes("como prefere") &&
+      msg.toLowerCase().includes("cartão") &&
+      msg.toLowerCase().includes("pix") &&
+      msg.toLowerCase().includes("código de barras"),
+    resposta: () => "Pagar boleto"
+  },
+  {
+    condicao: msg =>
+      msg.toLowerCase().includes("digite o e-mail completo"),
+    resposta: () => CLIENTE.nascimentoOuEmail
+  },
+  {
+    condicao: msg =>
+      msg.toLowerCase().includes("quer receber alguma outra conta"),
+    resposta: () => "Não"
+  },
+  {
+    condicao: msg =>
+      msg.toLowerCase().includes("osso te ajudar com mais alguma coisa"),
+    resposta: () => "Não"
+  },
+  {
+    condicao: msg =>
+      msg.toLowerCase().includes("ntes de encerrar, você pode me contar o que achou da nossa conversa"),
+    resposta: () => "5"
+  } 
+];
 
-      while ((match = regex.exec(msg)) !== null) {
-        const optionNumber = match[1]; // Ex: "1"
-        const referencia = match[2];   // Ex: "06/2025"
-
-        if (referencia === CLIENTE.alvo) {
-          referenceFound = optionNumber;
-          break;
-        }
-      }
-
-      const resposta = referenceFound || "1"; //mas não podemos baixar a conta errada
-      console.log(`📌 Opção escolhida com referência ${CLIENTE.alvo}: ${resposta}${referenceFound ? "" : " (referência não encontrada)"}`);
-      return resposta;
-    },
-    nextState: "OPCAO_PAGAMENTO"
-  },
-  OPCAO_PAGAMENTO: {
-    condition: (msg) => msg.includes("Posso te enviar essa conta por aqui"),
-    action: () => "Pagar boleto",
-    nextState: "VALIDAR"
-  },
-  VALIDAR: {
-    condition: (msg) => msg.includes("Digite os 4 primeiros dígitos do CPF ou CNPJ"),
-    action: () => {
-      const resposta = CLIENTE.cpfCnpj.slice(0, 4);
-      setTimeout(monitorarDownloadPDF, 10000); // inicia monitoramento após 10s
-      return resposta;
-    },
-    nextState: "PROXIMA_CONTA"
-  },
-  PROXIMA_CONTA: {
-    condition: (msg) => msg.includes("Quer receber alguma outra conta?"),
-    action: () => "Não",
-    nextState: "POSSO_AJUDAR"
-  },
-  POSSO_AJUDAR: {
-    condition: (msg) => msg.includes("Posso te ajudar com mais alguma coisa?"),
-    action: () => "Não",
-    nextState: "AVALIAR"
-  },
-  AVALIAR: {
-    condition: (msg) => msg.includes("Antes de encerrar"),
-    action: () => "5",
-    nextState: "FINAL"
-  },
-  FINAL: {
-    condition: () => true,
-    action: () => {
-      console.log("✅ Fluxo finalizado para este cliente.");
-      return null;
-    },
-    nextState: null
-  }
-};
-
-let currentState = "INITIAL";
-
+// Espera e clica no botão de download do PDF
 function monitorarDownloadPDF(tentativas = 0) {
-  const MAX_TENTATIVAS = 30; // tenta por ~30s
+  const MAX_TENTATIVAS = 30;
   const downloadSpan = document.querySelector("span[data-icon='document-PDF-icon']");
-
   if (downloadSpan && downloadSpan.parentElement) {
     downloadSpan.parentElement.click();
     console.log("✅ Botão de download clicado.");
@@ -104,7 +73,7 @@ function monitorarDownloadPDF(tentativas = 0) {
   }
 }
 
-// Redirecionamento para o número do bot
+// Redireciona para o número do bot
 function waitForWhatsAppToLoad() {
   const appElement = document.querySelector("#app");
   if (appElement) {
@@ -117,7 +86,7 @@ function waitForWhatsAppToLoad() {
   }
 }
 
-// Envio de mensagens
+// Envia mensagem para o chat
 function typeAndSendMessage(text) {
   const messageBox = document.querySelector("div[contenteditable='true'][data-tab='10']");
   if (!messageBox) {
@@ -126,11 +95,11 @@ function typeAndSendMessage(text) {
   }
 
   messageBox.focus();
-  const inputEvent = new InputEvent('input', {
+  const inputEvent = new InputEvent("input", {
     bubbles: true,
     cancelable: true,
     data: text,
-    inputType: 'insertText'
+    inputType: "insertText"
   });
 
   messageBox.textContent = text;
@@ -147,87 +116,69 @@ function typeAndSendMessage(text) {
   }, 1000);
 }
 
-// Clique no botão de download do PDF
-function clickDownloadButton() {
-  const downloadSpan = document.querySelector("span[data-icon='document-PDF-icon']");
-  if (downloadSpan && downloadSpan.parentElement) {
-    downloadSpan.parentElement.click();
-    console.log("✅ Botão de download clicado.");
-  } else {
-    console.log("⛔ Botão de download não encontrado.");
-  }
-}
-
-
-// Função para extrair texto completo da última mensagem do bot
+// Extrai o texto da última mensagem recebida
 function getLastBotMessage() {
   const messages = document.querySelectorAll("div.message-in");
   if (!messages.length) return null;
 
   const last = messages[messages.length - 1];
+  const textContainer = last.querySelector("span.selectable-text");
 
-  function extractFullMessage(element) {
+  function extractText(node) {
     let result = "";
-    function recursiveTextExtract(node) {
+    function recursive(node) {
       if (node.nodeType === Node.TEXT_NODE) {
         result += node.textContent;
       } else if (node.nodeType === Node.ELEMENT_NODE) {
-        for (const child of node.childNodes) {
-          recursiveTextExtract(child);
-        }
+        for (const child of node.childNodes) recursive(child);
       }
     }
-    recursiveTextExtract(element);
+    recursive(node);
     return result.trim().replace(/\s+/g, " ");
   }
 
-  const textContainer = last.querySelector("span.selectable-text");
-  return textContainer ? extractFullMessage(textContainer) : null;
+  return textContainer ? extractText(textContainer) : null;
 }
 
-
-// Controla o fluxo principal baseado nos estados
+// Verifica a mensagem e responde se necessário
 function handleBotResponse() {
   const message = getLastBotMessage();
   if (!message) {
-    console.log("⚠️ Nenhuma mensagem encontrada ainda...");
-    setTimeout(handleBotResponse, 5000);
+    console.log("⚠️ Nenhuma mensagem encontrada.");
+    setTimeout(handleBotResponse, 10000);
     return;
   }
 
-  console.log(`📨 Última mensagem do bot: "${message}"`);
+  console.log(`📨 Última mensagem: "${message}"`);
 
-  const state = FLOW[currentState];
-  if (state && state.condition(message)) {
-    const response = state.action();
-    if (response) {
-      typeAndSendMessage(response);
+  for (const acao of ACOES) {
+    if (acao.condicao(message)) {
+      const resposta = acao.resposta();
+      console.log("💬 Respondendo com:", resposta);
+      typeAndSendMessage(resposta);
+      break;
     }
-    currentState = state.nextState;
-    if (currentState) {
-      setTimeout(handleBotResponse, 10000);
-    }
-  } else {
-    console.log(`❌ Mensagem não condiz com o estado atual (${currentState}).`);
-    setTimeout(handleBotResponse, 10000);
   }
+
+  // Espera 10s para checar a próxima mensagem
+  setTimeout(handleBotResponse, 10000);
 }
 
-// Começa após a conversa estar aberta
+// Espera o chat abrir e inicia o fluxo
 function waitForChatAndStartFlow() {
   const chat = document.querySelector("#main");
   if (!chat) {
-    console.log("⏳ Aguardando área de chat carregar...");
+    console.log("⏳ Aguardando chat carregar...");
     setTimeout(waitForChatAndStartFlow, 1000);
     return;
   }
 
-  console.log("✅ Área de chat carregada. Iniciando fluxo...");
+  console.log("✅ Chat carregado. Iniciando atendimento...");
   typeAndSendMessage("Bom dia");
   setTimeout(handleBotResponse, 10000);
 }
 
-// Inicializador
+// Início automático
 if (!window.location.href.includes("/send?phone=")) {
   waitForWhatsAppToLoad();
 } else {
