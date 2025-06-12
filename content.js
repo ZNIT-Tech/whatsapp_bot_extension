@@ -8,6 +8,10 @@ const CLIENTE = {
   alvo: "05/2025"
 };
 
+let mensagensAnteriores = [];
+let contadorRepeticao = 0;
+const MAX_REPETICOES = 3;
+
 // Ações baseadas na mensagem do bot
 const ACOES = [
   {
@@ -216,6 +220,30 @@ function waitForChatAndStartFlow() {
   console.log("✅ Chat carregado. Iniciando atendimento...");
   typeAndSendMessage("Bom dia");
   setTimeout(handleBotResponse, 10000);
+}
+
+function verificarTravamento() {
+  const mensagemAtual = getLastBotMessage();
+  if (!mensagemAtual) {
+    console.log("⚠️ Nenhuma mensagem para verificar travamento.");
+    setTimeout(verificarTravamento, 10000);
+    return;
+  }
+
+  mensagensAnteriores.push(mensagemAtual);
+  if (mensagensAnteriores.length > MAX_REPETICOES) {
+    mensagensAnteriores.shift(); // Mantém o histórico das últimas 3
+  }
+
+  const todasIguais = mensagensAnteriores.every(m => m === mensagensAnteriores[0]);
+
+  if (mensagensAnteriores.length === MAX_REPETICOES && todasIguais) {
+    console.log("🔁 Mensagem repetida 3 vezes. Enviando 'Olá' para destravar.");
+    typeAndSendMessage("Olá");
+    mensagensAnteriores = []; // Resetar histórico após envio
+  }
+
+  setTimeout(verificarTravamento, 10000);
 }
 
 // Início automático
