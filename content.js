@@ -4,7 +4,8 @@ const PHONE_NUMBER = "558632288200";
 const CLIENTE = {
   cpfCnpj: "79123716304",
   nascimentoOuEmail: "01/01/1990",
-  contaContrato: "000014832690"
+  contaContrato: "000014832690",
+  alvo : "05/2025"
 };
 
 // Máquina de estados
@@ -27,28 +28,23 @@ const FLOW = {
   ESCOLHER_CONTA: {
     condition: (msg) => msg.includes("Qual conta você quer receber agora?"),
     action: (msg) => {
-      const container = Array.from(document.querySelectorAll("div.message-in")).pop();
-      const blocks = container.querySelectorAll("span.copyable-text");
-
-      let currentOption = null;
+      const regex = /(\d+)\s*-\s*Referência:\s*(\d{2}\/\d{4})/g;
+      let match;
       let referenceFound = null;
 
-      blocks.forEach((span) => {
-        const text = span.innerText.trim();
+      while ((match = regex.exec(msg)) !== null) {
+        const optionNumber = match[1]; // Ex: "1"
+        const referencia = match[2];   // Ex: "06/2025"
 
-        // Detecta o número da opção
-        const matchOption = text.match(/^(\d+)\s*-\s*$/);
-        if (matchOption) {
-          currentOption = matchOption[1]; // salva o número como "1"
+        if (referencia === CLIENTE.alvo) {
+          referenceFound = optionNumber;
+          break;
         }
+      }
 
-        // Detecta a referência
-        if (text.includes("Referência") && text.includes(CLIENTE.referencia)) {
-          referenceFound = currentOption;
-        }
-      });
-
-      return referenceFound || "1"; // fallback para 1
+      const resposta = referenceFound || "1"; //mas não podemos baixar a conta errada
+      console.log(`📌 Opção escolhida com referência ${CLIENTE.alvo}: ${resposta}${referenceFound ? "" : " (referência não encontrada)"}`);
+      return resposta;
     },
     nextState: "OPCAO_PAGAMENTO"
   },
@@ -60,6 +56,21 @@ const FLOW = {
   VALIDAR: {
     condition: (msg) => msg.includes("Digite os 4 primeiros dígitos do CPF ou CNPJ"),
     action: () => CLIENTE.cpfCnpj.slice(0, 4),
+    nextState: "PROXIMA_CONTA"
+  },
+  PROXIMA_CONTA: {
+    condition: (msg) => msg.includes("Quer receber alguma outra conta?"),
+    action: () => "Não",
+    nextState: "POSSO_AJUDAR"
+  },
+  POSSO_AJUDAR: {
+    condition: (msg) => msg.includes("Posso te ajudar com mais alguma coisa?"),
+    action: () => "Não",
+    nextState: "AVALIAR"
+  },
+  AVALIAR: {
+    condition: (msg) => msg.includes("Antes de encerrar"),
+    action: () => "5",
     nextState: "FINAL"
   },
   FINAL: {
@@ -128,15 +139,33 @@ function clickDownloadButton() {
   }
 }
 
-// Lê a última mensagem recebida do bot
+
+// Função para extrair texto completo da última mensagem do bot
 function getLastBotMessage() {
   const messages = document.querySelectorAll("div.message-in");
   if (!messages.length) return null;
 
   const last = messages[messages.length - 1];
-  const textSpan = last.querySelector("span.selectable-text span");
-  return textSpan?.innerText || null;
+
+  function extractFullMessage(element) {
+    let result = "";
+    function recursiveTextExtract(node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        result += node.textContent;
+      } else if (node.nodeType === Node.ELEMENT_NODE) {
+        for (const child of node.childNodes) {
+          recursiveTextExtract(child);
+        }
+      }
+    }
+    recursiveTextExtract(element);
+    return result.trim().replace(/\s+/g, " ");
+  }
+
+  const textContainer = last.querySelector("span.selectable-text");
+  return textContainer ? extractFullMessage(textContainer) : null;
 }
+
 
 // Controla o fluxo principal baseado nos estados
 function handleBotResponse() {
