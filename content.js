@@ -55,7 +55,11 @@ const FLOW = {
   },
   VALIDAR: {
     condition: (msg) => msg.includes("Digite os 4 primeiros dígitos do CPF ou CNPJ"),
-    action: () => CLIENTE.cpfCnpj.slice(0, 4),
+    action: () => {
+      const resposta = CLIENTE.cpfCnpj.slice(0, 4);
+      setTimeout(monitorarDownloadPDF, 10000); // inicia monitoramento após 10s
+      return resposta;
+    },
     nextState: "PROXIMA_CONTA"
   },
   PROXIMA_CONTA: {
@@ -84,6 +88,21 @@ const FLOW = {
 };
 
 let currentState = "INITIAL";
+
+function monitorarDownloadPDF(tentativas = 0) {
+  const MAX_TENTATIVAS = 30; // tenta por ~30s
+  const downloadSpan = document.querySelector("span[data-icon='document-PDF-icon']");
+
+  if (downloadSpan && downloadSpan.parentElement) {
+    downloadSpan.parentElement.click();
+    console.log("✅ Botão de download clicado.");
+  } else if (tentativas < MAX_TENTATIVAS) {
+    console.log(`🔎 Procurando botão de download... (${tentativas + 1}/${MAX_TENTATIVAS})`);
+    setTimeout(() => monitorarDownloadPDF(tentativas + 1), 1000);
+  } else {
+    console.log("⛔ Botão de download não encontrado após várias tentativas.");
+  }
+}
 
 // Redirecionamento para o número do bot
 function waitForWhatsAppToLoad() {
