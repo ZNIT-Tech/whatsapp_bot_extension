@@ -2,9 +2,9 @@ const PHONE_NUMBER = "558632288200"; // Substitua pelo número do bot
 
 // Dados do cliente (CPF ou CNPJ + info de validação)
 const CLIENTE = {
-  cpfCnpj: "95034684349", // Pode ser CPF ou CNPJ
+  cpfCnpj: "74011642304", // Pode ser CPF ou CNPJ
   nascimentoOuEmail: "22/11/1975", // Ou data de nascimento
-  contaContrato: "003000602441",
+  contaContrato: "000013725130",
   alvo: "05/2025"
 };
 
