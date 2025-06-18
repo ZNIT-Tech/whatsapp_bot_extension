@@ -1,5 +1,8 @@
 const PHONE_NUMBER = "558632288200"; // Substitua pelo número do bot
 
+let indiceCliente = 0;
+
+
 // Variável CLIENTE será preenchida dinamicamente após buscar na API
 let CLIENTE = null;
 
@@ -88,28 +91,44 @@ const ACOES = [
 ];
 
 // Função para buscar cliente na API
-async function carregarCliente() {
+async function carregarCliente(index) {
   try {
     const response = await fetch(chrome.runtime.getURL("clientes.json"));
     if (!response.ok) throw new Error(`Erro ao carregar arquivo: ${response.status}`);
-    
-    const clientes = await response.json();
-    if (clientes.length === 1) throw new Error('Nenhum cliente encontrado');
 
-    const primeiroCliente = clientes[0];
+    const clientes = await response.json();
+
+    if (!Array.isArray(clientes) || clientes.length === 0) {
+      console.error("🚫 Lista de clientes está vazia ou inválida.");
+      return null;
+    }
+
+    if (index >= clientes.length) {
+      console.warn(`⚠️ Índice ${index} fora do alcance. Total de clientes: ${clientes.length}.`);
+      return null;
+    }
+
+    const cliente = clientes[index];
+    if (!cliente || !cliente.cnpj_cpf) {
+      console.warn(`⚠️ Cliente inválido no índice ${index}:`, cliente);
+      return null;
+    }
 
     return {
-      cpfCnpj: primeiroCliente.cnpj_cpf,
-      nascimentoOuEmail: primeiroCliente.email_data,
-      contaContrato: primeiroCliente.ucs || '',
-      alvo: primeiroCliente.alvo || ''
+      cpfCnpj: cliente.cnpj_cpf,
+      nascimentoOuEmail: cliente.email_data,
+      contaContrato: cliente.ucs || '',
+      alvo: cliente.alvo || ''
     };
 
   } catch (error) {
-    console.error('Erro ao carregar cliente:', error);
+    console.error('💥 Erro ao carregar cliente:', error);
     return null;
   }
 }
+
+
+
 
 // Espera e clica no botão de download do PDF
 function monitorarDownloadPDF(tentativas = 0) {
@@ -204,6 +223,14 @@ function handleBotResponse() {
 
   console.log(`📨 Última mensagem: "${message}"`);
 
+  // Verifica se é a mensagem de finalização
+  if (message.includes("Que bom! Fico muito feliz de te ajudar") || message.includes("Obrigada por compartilhar sua opinião comigo.")) {
+    console.log("✅ Fluxo finalizado com cliente atual.");
+    indiceCliente += 1;
+    setTimeout(() => iniciarBot(indiceCliente), 10000); // espera 10s e vai para o próximo
+    return;
+  }
+
   for (const acao of ACOES) {
     if (acao.condicao(message)) {
       const resposta = acao.resposta(message);
@@ -213,9 +240,9 @@ function handleBotResponse() {
     }
   }
 
-  // Espera 10s para checar a próxima mensagem
   setTimeout(handleBotResponse, 10000);
 }
+
 
 function clickDownloadButton() {
   const downloadSpan = document.querySelector("span[data-icon='document-PDF-icon']");
@@ -266,25 +293,24 @@ function verificarTravamento() {
 }
 
 // Início automático: carrega cliente e depois inicia o bot
-async function iniciarBot() {
-  CLIENTE = await carregarCliente();
+async function iniciarBot(index) {
+  CLIENTE = await carregarCliente(index);
 
   if (!CLIENTE) {
-    console.error('Não foi possível carregar dados do cliente. Abortando fluxo.');
+    console.error('Não foi possível carregar dados do cliente. Encerrando.');
     return;
   }
 
-  // Já estamos na conversa com o número correto?
   const currentUrl = window.location.href;
   const expectedUrl = `https://web.whatsapp.com/send?phone=${PHONE_NUMBER}`;
 
-  // Só redireciona se ainda não estamos na URL correta
   if (!currentUrl.includes(`/send?phone=${PHONE_NUMBER}`)) {
     console.log("🌐 Redirecionando para o número do bot...");
-  window.location.href = expectedUrl;
+    window.location.href = expectedUrl;
   } else {
     waitForChatAndStartFlow();
   }
 }
 
-iniciarBot();
+
+iniciarBot(indiceCliente);
