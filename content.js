@@ -20,8 +20,7 @@ const ACOES = [
   {
     condicao: msg =>
       msg.toLowerCase().includes("informe o cpf") ||
-      msg.toLowerCase().includes("informe o cnpj") ||
-      msg.toLowerCase().includes("conta contrato do imóvel"),
+      msg.toLowerCase().includes("informe o cnpj"),
     resposta: () => CLIENTE ? CLIENTE.cpfCnpj : ""
   },
   {
@@ -293,7 +292,7 @@ function verificarTravamento() {
 }
 
 // Início automático: carrega cliente e depois inicia o bot
-async function iniciarBot(index) {
+async function iniciarBot(index = 0) {
   CLIENTE = await carregarCliente(index);
 
   if (!CLIENTE) {
@@ -304,10 +303,15 @@ async function iniciarBot(index) {
   const currentUrl = window.location.href;
   const expectedUrl = `https://web.whatsapp.com/send?phone=${PHONE_NUMBER}`;
 
-  if (!currentUrl.includes(`/send?phone=${PHONE_NUMBER}`)) {
+  // Checa se já fez redirecionamento nessa sessão
+  const redirecionou = sessionStorage.getItem('botRedirecionou');
+
+  if (!currentUrl.includes(`/send?phone=${PHONE_NUMBER}`) && !redirecionou) {
     console.log("🌐 Redirecionando para o número do bot...");
+    sessionStorage.setItem('botRedirecionou', 'true'); // Marca que já redirecionou
     window.location.href = expectedUrl;
   } else {
+    console.log("✅ No chat do bot, iniciando fluxo...");
     waitForChatAndStartFlow();
   }
 }
