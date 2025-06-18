@@ -94,7 +94,7 @@ async function carregarCliente() {
     if (!response.ok) throw new Error(`Erro ao carregar arquivo: ${response.status}`);
     
     const clientes = await response.json();
-    if (clientes.length === 0) throw new Error('Nenhum cliente encontrado');
+    if (clientes.length === 1) throw new Error('Nenhum cliente encontrado');
 
     const primeiroCliente = clientes[0];
 
@@ -281,7 +281,7 @@ async function iniciarBot() {
   // Só redireciona se ainda não estamos na URL correta
   if (!currentUrl.includes(`/send?phone=${PHONE_NUMBER}`)) {
     console.log("🌐 Redirecionando para o número do bot...");
-    window.location.href = expectedUrl;
+  window.location.href = expectedUrl;
   } else {
     waitForChatAndStartFlow();
   }
