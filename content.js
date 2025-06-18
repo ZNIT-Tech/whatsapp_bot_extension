@@ -1,12 +1,7 @@
 const PHONE_NUMBER = "558632288200"; // Substitua pelo número do bot
 
-// Dados do cliente (CPF ou CNPJ + info de validação)
-const CLIENTE = {
-  cpfCnpj: "74011642304", // Pode ser CPF ou CNPJ
-  nascimentoOuEmail: "22/11/1975", // Ou data de nascimento
-  contaContrato: "000013725130",
-  alvo: "05/2025"
-};
+// Variável CLIENTE será preenchida dinamicamente após buscar na API
+let CLIENTE = null;
 
 let mensagensAnteriores = [];
 let contadorRepeticao = 0;
@@ -24,7 +19,7 @@ const ACOES = [
       msg.toLowerCase().includes("informe o cpf") ||
       msg.toLowerCase().includes("informe o cnpj") ||
       msg.toLowerCase().includes("conta contrato do imóvel"),
-    resposta: () => CLIENTE.cpfCnpj
+    resposta: () => CLIENTE ? CLIENTE.cpfCnpj : ""
   },
   {
     condicao: msg =>
@@ -42,7 +37,7 @@ const ACOES = [
   {
     condicao: msg =>
       msg.toLowerCase().includes("digite o e-mail completo"),
-    resposta: () => CLIENTE.nascimentoOuEmail
+    resposta: () => CLIENTE ? CLIENTE.nascimentoOuEmail : ""
   },
   {
     condicao: msg =>
@@ -65,6 +60,7 @@ const ACOES = [
   {
     condicao: msg => msg.toLowerCase().includes("qual conta você quer receber agora"),
     resposta: (msg) => {
+      if (!CLIENTE) return "1";
       const regex = /(\d+)\s*-\s*referência:\s*([\d/]+)/gi;
       let match;
       while ((match = regex.exec(msg)) !== null) {
@@ -74,7 +70,6 @@ const ACOES = [
           return opcao;  // Retorna o número da opção encontrada
         }
       }
-      // Se não encontrou, retorna mensagem padrão ou string vazia
       console.log("⚠️ Nenhuma opção correspondente encontrada.");
       return "1";
     }
@@ -82,15 +77,39 @@ const ACOES = [
   {
     condicao: msg =>
       msg.toLowerCase().includes("igite o número do contra contrato"),
-    resposta: () => CLIENTE.contaContrato
+    resposta: () => CLIENTE ? CLIENTE.contaContrato : ""
   },
   {
     condicao: msg =>
       msg.toLowerCase().includes("4 primeiros dígitos do CPF") ||
       msg.toLowerCase().includes("os 4 primeiros dígitos"),
-    resposta: () => CLIENTE.cpfCnpj.slice(0, 4)
+    resposta: () => CLIENTE ? CLIENTE.cpfCnpj.slice(0, 4) : ""
   }
 ];
+
+// Função para buscar cliente na API
+async function carregarCliente() {
+  try {
+    const response = await fetch(chrome.runtime.getURL("clientes.json"));
+    if (!response.ok) throw new Error(`Erro ao carregar arquivo: ${response.status}`);
+    
+    const clientes = await response.json();
+    if (clientes.length === 0) throw new Error('Nenhum cliente encontrado');
+
+    const primeiroCliente = clientes[0];
+
+    return {
+      cpfCnpj: primeiroCliente.cnpj_cpf,
+      nascimentoOuEmail: primeiroCliente.email_data,
+      contaContrato: primeiroCliente.ucs || '',
+      alvo: primeiroCliente.alvo || ''
+    };
+
+  } catch (error) {
+    console.error('Erro ao carregar cliente:', error);
+    return null;
+  }
+}
 
 // Espera e clica no botão de download do PDF
 function monitorarDownloadPDF(tentativas = 0) {
@@ -186,13 +205,13 @@ function handleBotResponse() {
   console.log(`📨 Última mensagem: "${message}"`);
 
   for (const acao of ACOES) {
-  if (acao.condicao(message)) {
-    const resposta = acao.resposta(message); // <-- passa a mensagem aqui
-    console.log("💬 Respondendo com:", resposta);
-    typeAndSendMessage(resposta);
-    break;
+    if (acao.condicao(message)) {
+      const resposta = acao.resposta(message);
+      console.log("💬 Respondendo com:", resposta);
+      typeAndSendMessage(resposta);
+      break;
+    }
   }
-}
 
   // Espera 10s para checar a próxima mensagem
   setTimeout(handleBotResponse, 10000);
@@ -246,9 +265,26 @@ function verificarTravamento() {
   setTimeout(verificarTravamento, 10000);
 }
 
-// Início automático
-if (!window.location.href.includes("/send?phone=")) {
-  waitForWhatsAppToLoad();
-} else {
-  waitForChatAndStartFlow();
+// Início automático: carrega cliente e depois inicia o bot
+async function iniciarBot() {
+  CLIENTE = await carregarCliente();
+
+  if (!CLIENTE) {
+    console.error('Não foi possível carregar dados do cliente. Abortando fluxo.');
+    return;
+  }
+
+  // Já estamos na conversa com o número correto?
+  const currentUrl = window.location.href;
+  const expectedUrl = `https://web.whatsapp.com/send?phone=${PHONE_NUMBER}`;
+
+  // Só redireciona se ainda não estamos na URL correta
+  if (!currentUrl.includes(`/send?phone=${PHONE_NUMBER}`)) {
+    console.log("🌐 Redirecionando para o número do bot...");
+    window.location.href = expectedUrl;
+  } else {
+    waitForChatAndStartFlow();
+  }
 }
+
+iniciarBot();
