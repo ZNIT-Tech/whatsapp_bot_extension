@@ -78,7 +78,17 @@ const ACOES = [
   },
   {
     condicao: msg =>
-      msg.toLowerCase().includes("igite o número do contra contrato"),
+      msg.toLowerCase().includes("Certo. Preciso que informe a Conta Contrato"),
+    resposta: () => CLIENTE ? CLIENTE.contaContrato : ""
+  },
+  {
+    condicao: msg =>
+      msg.toLowerCase().includes("contra contrato ou a sequencia"),
+    resposta: () => CLIENTE ? CLIENTE.contaContrato : ""
+  },
+  {
+    condicao: msg =>
+      msg.toLowerCase().includes("digitar o número do contra contrato ou a letra desejada."),
     resposta: () => CLIENTE ? CLIENTE.contaContrato : ""
   },
   {
@@ -86,6 +96,11 @@ const ACOES = [
       msg.toLowerCase().includes("4 primeiros dígitos do CPF") ||
       msg.toLowerCase().includes("os 4 primeiros dígitos"),
     resposta: () => CLIENTE ? CLIENTE.cpfCnpj.slice(0, 4) : ""
+  },
+  {
+    condicao: msg =>
+      msg.toLowerCase().includes("preciso que informe a conta contrato"),
+    resposta: () => CLIENTE ? CLIENTE.contaContrato : ""
   }
 ];
 
@@ -220,10 +235,17 @@ function handleBotResponse() {
     return;
   }
 
+  const lowerMsg = message.toLowerCase(); 
+
   console.log(`📨 Última mensagem: "${message}"`);
 
   // Verifica se é a mensagem de finalização
-  if (message.includes("Que bom! Fico muito feliz de te ajudar") || message.includes("Obrigada por compartilhar sua opinião comigo.")) {
+  if (
+    lowerMsg.includes("que bom! fico muito feliz de te ajudar") ||
+    lowerMsg.includes("obrigada por compartilhar sua opinião comigo.") ||
+    lowerMsg.includes("você pode tirar suas dúvidas no nosso site") ||
+    lowerMsg.includes("eu ainda não consigo te ajudar com esse assunto por aqui.")
+  ) {
     console.log("✅ Fluxo finalizado com cliente atual.");
     indiceCliente += 1;
     setTimeout(() => iniciarBot(indiceCliente), 10000); // espera 10s e vai para o próximo
