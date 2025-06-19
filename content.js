@@ -101,6 +101,11 @@ const ACOES = [
     condicao: msg =>
       msg.toLowerCase().includes("preciso que informe a conta contrato"),
     resposta: () => CLIENTE ? CLIENTE.contaContrato : ""
+  },
+  {
+    condicao: msg =>
+      msg.toLowerCase().includes("data de nascimento"),
+    resposta: () => CLIENTE ? CLIENTE.nascimentoOuEmail : ""
   }
 ];
 
@@ -286,7 +291,7 @@ function waitForChatAndStartFlow() {
 
   console.log("✅ Chat carregado. Iniciando atendimento...");
   typeAndSendMessage("Bom dia");
-  setTimeout(handleBotResponse, 10000);
+  setTimeout(handleBotResponse, 19000);
 }
 
 function verificarTravamento() {
