@@ -11,6 +11,12 @@
       "js": ["content.js"]
     }
   ],
+  "web_accessible_resources": [
+    {
+      "resources": ["clientes.json"],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "action": {
     "default_title": "Automatizar Equatorial"
   }
