@@ -110,41 +110,41 @@ const ACOES = [
 ];
 
 // Função para buscar cliente na API
+let LISTA_CLIENTES = null;
+
 async function carregarCliente(index) {
   try {
-    const response = await fetch(chrome.runtime.getURL("clientes.json"));
-    if (!response.ok) throw new Error(`Erro ao carregar arquivo: ${response.status}`);
+    if (!LISTA_CLIENTES) {
+      const response = await chrome.runtime.sendMessage({
+        action: "getClientes"
+      });
 
-    const clientes = await response.json();
+      if (!response.success || !Array.isArray(response.data)) {
+        throw new Error("Resposta da API inválida");
+      }
 
-    if (!Array.isArray(clientes) || clientes.length === 0) {
-      console.error("🚫 Lista de clientes está vazia ou inválida.");
+      LISTA_CLIENTES = response.data;
+    }
+
+    if (index >= LISTA_CLIENTES.length) {
+      console.warn(`Índice ${index} excede total (${LISTA_CLIENTES.length}).`);
       return null;
     }
 
-    if (index >= clientes.length) {
-      console.warn(`⚠️ Índice ${index} fora do alcance. Total de clientes: ${clientes.length}.`);
-      return null;
-    }
-
-    const cliente = clientes[index];
-    if (!cliente || !cliente.cnpj_cpf) {
-      console.warn(`⚠️ Cliente inválido no índice ${index}:`, cliente);
-      return null;
-    }
-
+    const cli = LISTA_CLIENTES[index];
     return {
-      cpfCnpj: cliente.cnpj_cpf,
-      nascimentoOuEmail: cliente.email_data,
-      contaContrato: cliente.ucs || '',
-      alvo: cliente.alvo || ''
+      cpfCnpj: cli.cnpj_cpf,
+      nascimentoOuEmail: cli.email_data,
+      contaContrato: cli.ucs || "",
+      alvo: cli.alvo || ""
     };
 
-  } catch (error) {
-    console.error('💥 Erro ao carregar cliente:', error);
+  } catch (err) {
+    console.error("💥 Erro ao carregar cliente via background:", err);
     return null;
   }
 }
+
 
 
 

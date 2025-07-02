@@ -1,22 +1,35 @@
 {
   "manifest_version": 3,
+
   "name": "Automatizador WhatsApp Equatorial",
-  "version": "1.0",
-  "description": "Envia mensagens automatizadas para o bot da Equatorial no WhatsApp Web.",
-  "permissions": ["scripting", "activeTab"],
-  "host_permissions": ["https://web.whatsapp.com/*"],
+  "version": "1.1.0",
+  "description": "Envia mensagens automatizadas para o bot da Equatorial no WhatsApp Web, buscando os clientes na API da ZNIT.",
+
+
+  "permissions": [
+    "scripting",   
+    "activeTab",   
+    "storage"      
+  ],
+  "host_permissions": [
+    "https://web.whatsapp.com/*",
+    "https://api.znit.ai/*"
+  ],
+
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+
   "content_scripts": [
     {
       "matches": ["https://web.whatsapp.com/*"],
-      "js": ["content.js"]
+      "js": ["content.js"],
+      "run_at": "document_idle"
     }
   ],
-  "web_accessible_resources": [
-    {
-      "resources": ["clientes.json"],
-      "matches": ["<all_urls>"]
-    }
-  ],
+
   "action": {
     "default_title": "Automatizar Equatorial"
   }
