@@ -110,44 +110,40 @@ const ACOES = [
 ];
 
 // Função para buscar cliente na API
+let LISTA_CLIENTES = null;
+
 async function carregarCliente(index) {
   try {
-    const response = await fetch(chrome.runtime.getURL("clientes.json"));
-    if (!response.ok) throw new Error(`Erro ao carregar arquivo: ${response.status}`);
+    if (!LISTA_CLIENTES) {
+      const response = await chrome.runtime.sendMessage({
+        action: "getClientes"
+      });
 
-    const clientes = await response.json();
+      if (!response.success || !Array.isArray(response.data)) {
+        throw new Error("Resposta da API inválida");
+      }
 
-    if (!Array.isArray(clientes) || clientes.length === 0) {
-      console.error("🚫 Lista de clientes está vazia ou inválida.");
+      LISTA_CLIENTES = response.data;
+    }
+
+    if (index >= LISTA_CLIENTES.length) {
+      console.warn(`Índice ${index} excede total (${LISTA_CLIENTES.length}).`);
       return null;
     }
 
-    if (index >= clientes.length) {
-      console.warn(`⚠️ Índice ${index} fora do alcance. Total de clientes: ${clientes.length}.`);
-      return null;
-    }
-
-    const cliente = clientes[index];
-    if (!cliente || !cliente.cnpj_cpf) {
-      console.warn(`⚠️ Cliente inválido no índice ${index}:`, cliente);
-      return null;
-    }
-
+    const cli = LISTA_CLIENTES[index];
     return {
-      cpfCnpj: cliente.cnpj_cpf,
-      nascimentoOuEmail: cliente.email_data,
-      contaContrato: cliente.ucs || '',
-      alvo: cliente.alvo || ''
+      cpfCnpj: cli.cnpj_cpf,
+      nascimentoOuEmail: cli.email_data,
+      contaContrato: cli.ucs || "",
+      alvo: cli.alvo || ""
     };
 
-  } catch (error) {
-    console.error('💥 Erro ao carregar cliente:', error);
+  } catch (err) {
+    console.error("💥 Erro ao carregar cliente via background:", err);
     return null;
   }
 }
-
-
-
 
 // Espera e clica no botão de download do PDF
 function monitorarDownloadPDF(tentativas = 0) {
@@ -231,42 +227,60 @@ function getLastBotMessage() {
   return textContainer ? extractText(textContainer) : null;
 }
 
-// Verifica a mensagem e responde se necessário
+/**
+ * Lê a última mensagem do bot e toma a próxima ação.
+ * – Detecta fim do atendimento, avança (em loop) para o próximo cliente.
+ * – Percorre a tabela ACOES e responde a cada prompt do bot.
+ */
 function handleBotResponse() {
   const message = getLastBotMessage();
+
+  /* ----------------- 1. Sem mensagem? aguarda 10 s ----------------- */
   if (!message) {
     console.log("⚠️ Nenhuma mensagem encontrada.");
-    setTimeout(handleBotResponse, 10000);
+    setTimeout(handleBotResponse, 10_000);
     return;
   }
 
-  const lowerMsg = message.toLowerCase(); 
-
+  const lowerMsg = message.toLowerCase();
   console.log(`📨 Última mensagem: "${message}"`);
 
-  // Verifica se é a mensagem de finalização
-  if (
+  /* --------------- 2. Detecta frases de encerramento ---------------- */
+  const encerrou =
     lowerMsg.includes("que bom! fico muito feliz de te ajudar") ||
     lowerMsg.includes("obrigada por compartilhar sua opinião comigo.") ||
     lowerMsg.includes("você pode tirar suas dúvidas no nosso site") ||
-    lowerMsg.includes("eu ainda não consigo te ajudar com esse assunto por aqui.")
-  ) {
+    lowerMsg.includes("eu ainda não consigo te ajudar com esse assunto por aqui.");
+
+  if (encerrou) {
     console.log("✅ Fluxo finalizado com cliente atual.");
-    indiceCliente += 1;
-    setTimeout(() => iniciarBot(indiceCliente), 10000); // espera 10s e vai para o próximo
+
+    // Próximo cliente em loop: (i + 1) mod total
+    if (LISTA_CLIENTES && LISTA_CLIENTES.length) {
+      indiceCliente = (indiceCliente + 1) % LISTA_CLIENTES.length;
+    } else {
+      indiceCliente = 0;           // fallback se a lista não existir
+    }
+
+    mensagensAnteriores = [];       // zera o buffer antitravamento
+    setTimeout(() => iniciarBot(indiceCliente), 10_000);  // recomeça em 10 s
     return;
   }
 
+  /* --------------------- 3. Tabela de ações ------------------------ */
   for (const acao of ACOES) {
-    if (acao.condicao(message)) {
+    if (acao.condicao(message)) {   // (usa mensagem original para manter lógica)
       const resposta = acao.resposta(message);
       console.log("💬 Respondendo com:", resposta);
-      typeAndSendMessage(resposta);
-      break;
+      if (resposta !== undefined && resposta !== null) {
+        typeAndSendMessage(String(resposta));
+      }
+      break;                        // evita responder duas vezes
     }
   }
 
-  setTimeout(handleBotResponse, 10000);
+  /* --------------------- 4. Reagenda verificação ------------------- */
+  setTimeout(handleBotResponse, 10_000);
 }
 
 
