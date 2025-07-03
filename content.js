@@ -238,7 +238,7 @@ function handleBotResponse() {
   /* ----------------- 1. Sem mensagem? aguarda 10 s ----------------- */
   if (!message) {
     console.log("⚠️ Nenhuma mensagem encontrada.");
-    setTimeout(handleBotResponse, 10_000);
+    setTimeout(handleBotResponse, 19_000);
     return;
   }
 
