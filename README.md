@@ -1,99 +1,67 @@
-# Automação de Mensagens no WhatsApp Web com Download Automatico
+# Bot Automatizado de Atendimento via WhatsApp Web — ZNIT
 
-Este script automatiza o envio de mensagens sequenciais via **WhatsApp Web** e realiza o clique no botao de download assim que um arquivo (por exemplo, um PDF) e enviado. Ideal para processos repetitivos em interacoes com bots ou sistemas automatizados.
-
-## Funcionamento do Script
-
-### Variaveis Iniciais
-
-```js
-const PHONE_NUMBER = "558632288200";
-const MESSAGES = [
-  "Bom dia",
-  "6",
-  "79123716304",
-  "2",
-  "1",
-  "Pagar boleto",
-  "7912",
-  "Nao",
-  "Nao",
-  "3"
-];
-
-const DELAYS = [19000, 18000, 18000, 17000, 18000, 18000, 18000, 17000, 17000, 17000];
-```
-
-* Cada mensagem e enviada com o tempo de espera correspondente em `DELAYS`.
-* Quando a mensagem "7912" e enviada, o script aguarda um tempo extra e tenta clicar no botao de download do arquivo.
-
-### Etapas
-
-#### 1. Aguardar o carregamento do WhatsApp Web
-
-```js
-function waitForWhatsAppToLoad() { ... }
-```
-
-Verifica se o WhatsApp Web esta carregado e redireciona para a conversa com o numero definido.
-
-#### 2. Enviar mensagens
-
-```js
-function typeAndSendMessage(text) { ... }
-```
-
-Simula a digitacao e envio da mensagem, disparando um evento de input e clicando no botao de envio.
-
-#### 3. Clicar no botao de download
-
-```js
-function clickDownloadButton() { ... }
-```
-
-Identifica o botao com o `data-icon='audio-download'` (utilizado tambem por arquivos) e simula um clique para iniciar o download.
-
-#### 4. Sequencia de envio
-
-```js
-function waitForChatAndSend() { ... }
-```
-
-Verifica se a interface de chat esta pronta e inicia o envio das mensagens com seus respectivos atrasos. Quando encontra a mensagem "7912", agenda o clique no botao de download com 3 segundos extras.
-
-#### 5. Inicializacao
-
-```js
-if (!window.location.href.includes("/send?phone=")) {
-  waitForWhatsAppToLoad();
-} else {
-  waitForChatAndSend();
-}
-```
-
-Se ainda nao estiver na tela da conversa, redireciona para ela. Caso contrario, comeca a automacao.
+Este projeto é um **bot de automação de atendimento** para uso no WhatsApp Web, desenvolvido pela equipe técnica da **ZNIT**. Seu objetivo é interagir com um bot de atendimento de empresas fornecedoras (ex: concessionárias de energia), simulando conversas humanas de forma segura, repetível e automática.
 
 ---
 
-## Requisitos do Navegador
+##  Funcionalidades
 
-Para que o clique no botao de download funcione corretamente sem interacao adicional:
-
-### Chrome
-
-1. Acesse `chrome://settings/downloads`
-2. Desative a opcao:
-
-   * "Perguntar onde salvar cada arquivo antes de fazer o download"
-
-> Com isso, o clique no botao inicia automaticamente o download na pasta padrao sem necessidade de pressionar ENTER ou confirmar.
+- Interação automática com o bot via mensagens inteligentes.
+- Extração e clique automático no botão de download de faturas em PDF.
+- Tratamento de loops de travamento no atendimento (mensagens repetidas).
+- Integração com background script para carregamento de dados dos clientes.
+- Fluxo completo de atendimento para múltiplos clientes em sequência.
 
 ---
 
-## Consideracoes Finais
+##  Estrutura do Código
 
-* O script deve ser colado no console de desenvolvedor do navegador (F12 > Console).
-* Uso destinado a automacoes internas com permissao legal para execucao.
-* Dependente da estrutura do WhatsApp Web, sujeito a mudancas no DOM.
+- `PHONE_NUMBER`: número do bot com o qual o script interage.
+- `CLIENTE`: dados dinâmicos carregados da API.
+- `ACOES`: matriz de condições e respostas automatizadas.
+- `handleBotResponse`: motor principal do fluxo de conversa.
+- `monitorarDownloadPDF`: detecção e clique no botão de download.
+- `iniciarBot`: ponto de entrada do sistema.
 
-Este processo automatizado tem como objetivo agilizar tarefas repetitivas na sua empresa, como recuperar arquivos enviados automaticamente por bots de atendimento.
+---
+
+## Como Funciona
+
+1. Ao carregar a página do WhatsApp Web, o script redireciona automaticamente para o número do bot configurado.
+2. A primeira mensagem enviada é `"Bom dia"`, iniciando o atendimento.
+3. O script responde dinamicamente às mensagens do bot, conforme regras definidas em `ACOES`.
+4. Se for identificado um travamento (mesma mensagem 3 vezes seguidas), o script envia `"Olá"` para tentar destravar o atendimento.
+5. Ao final do atendimento de um cliente, o script inicia automaticamente o atendimento ao próximo.
+
+---
+
+## Instalação e Uso
+
+1. **Pré-requisitos:**
+   - Google Chrome instalado.
+   - Extensão de automação configurada (ex: via extensão customizada do `Chrome Extension` com permissões adequadas).
+   - API de clientes acessível via `chrome.runtime.sendMessage({ action: "getClientes" })`.
+
+2. **Passos para rodar:**
+
+   - Copie o código para o script principal da extensão ou ferramenta de automação.
+   - Acesse [https://web.whatsapp.com](https://web.whatsapp.com).
+   - Faça login com sua conta do WhatsApp.
+   - O bot será iniciado automaticamente para o número do bot definido em `PHONE_NUMBER`.
+
+---
+
+## Estrutura Esperada da API de Clientes
+
+A resposta da API `getClientes` deve ser uma lista de objetos com os seguintes campos:
+
+```json
+[
+  {
+    "cnpj_cpf": "12345678901",
+    "email_data": "cliente@email.com", // ou data de nascimento
+    "ucs": "123456789",
+    "alvo": "06/2024"
+  },
+  ...
+]
