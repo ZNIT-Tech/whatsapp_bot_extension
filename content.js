@@ -1,7 +1,7 @@
 const PHONE_NUMBER = "558632288200"; // Substitua pelo número do bot
 
 let indiceCliente = 0;
-
+let ultimaMensagemRespondida = null;
 
 // Variável CLIENTE será preenchida dinamicamente após buscar na API
 let CLIENTE = null;
@@ -25,7 +25,8 @@ const ACOES = [
   },
   {
     condicao: msg =>
-      msg.toLowerCase().includes("é para esse imóvel que você deseja atendimento"),
+      msg.toLowerCase().includes("imóvel") &&
+      msg.toLowerCase().includes("deseja atendimento"),
     resposta: () => "Sim"
   },
   {
@@ -235,17 +236,26 @@ function getLastBotMessage() {
 function handleBotResponse() {
   const message = getLastBotMessage();
 
-  /* ----------------- 1. Sem mensagem? aguarda 10 s ----------------- */
   if (!message) {
     console.log("⚠️ Nenhuma mensagem encontrada.");
-    setTimeout(handleBotResponse, 10_000);
+    setTimeout(handleBotResponse, 37_000); // Espera 37s antes de tentar novamente
     return;
   }
 
   const lowerMsg = message.toLowerCase();
   console.log(`📨 Última mensagem: "${message}"`);
 
-  /* --------------- 2. Detecta frases de encerramento ---------------- */
+  // Verifica se a última mensagem já foi respondida
+  if (message === ultimaMensagemRespondida) {
+    console.log("🔁 Mesma mensagem anterior, aguardando...");
+    setTimeout(handleBotResponse, 37_000);
+    return;
+  }
+
+  // Marca a mensagem como respondida
+  ultimaMensagemRespondida = message;
+
+  // Verifica se o atendimento foi encerrado
   const encerrou =
     lowerMsg.includes("que bom! fico muito feliz de te ajudar") ||
     lowerMsg.includes("obrigada por compartilhar sua opinião comigo.") ||
@@ -255,32 +265,32 @@ function handleBotResponse() {
   if (encerrou) {
     console.log("✅ Fluxo finalizado com cliente atual.");
 
-    // Próximo cliente em loop: (i + 1) mod total
     if (LISTA_CLIENTES && LISTA_CLIENTES.length) {
       indiceCliente = (indiceCliente + 1) % LISTA_CLIENTES.length;
     } else {
-      indiceCliente = 0;           // fallback se a lista não existir
+      indiceCliente = 0;
     }
 
-    mensagensAnteriores = [];       // zera o buffer antitravamento
-    setTimeout(() => iniciarBot(indiceCliente), 10_000);  // recomeça em 10 s
+    mensagensAnteriores = [];
+    ultimaMensagemRespondida = null; // Reseta controle para o próximo cliente
+
+    setTimeout(() => iniciarBot(indiceCliente), 10_000);
     return;
   }
 
-  /* --------------------- 3. Tabela de ações ------------------------ */
+  // Percorre as ações e responde se alguma condição for satisfeita
   for (const acao of ACOES) {
-    if (acao.condicao(message)) {   // (usa mensagem original para manter lógica)
+    if (acao.condicao(message)) {
       const resposta = acao.resposta(message);
       console.log("💬 Respondendo com:", resposta);
       if (resposta !== undefined && resposta !== null) {
         typeAndSendMessage(String(resposta));
       }
-      break;                        // evita responder duas vezes
+      break;
     }
   }
 
-  /* --------------------- 4. Reagenda verificação ------------------- */
-  setTimeout(handleBotResponse, 10_000);
+  setTimeout(handleBotResponse, 37_000); // Espera 37s para próxima verificação
 }
 
 
