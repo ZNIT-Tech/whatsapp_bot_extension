@@ -13,7 +13,8 @@ const MAX_REPETICOES = 3;
 // Ações baseadas na mensagem do bot
 const ACOES = [
   {
-    condicao: msg => msg.trim() === "O número de protocolo desse atendimento é .",
+    condicao: msg => 
+      msg.toLowerCase().includes("o número de protocolo desse atendimento é ."),
     resposta: () => "oi"
   },
   {
