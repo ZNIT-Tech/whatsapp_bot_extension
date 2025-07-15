@@ -14,7 +14,7 @@ const MAX_REPETICOES = 3;
 const ACOES = [
   {
     condicao: msg => 
-      msg.toLowerCase().includes("o número de protocolo desse atendimento é ."),
+      msg.toLowerCase().includes("mero de protocolo desse atendiment"),
     resposta: () => "oi"
   },
   {
