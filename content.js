@@ -319,7 +319,7 @@ function waitForChatAndStartFlow() {
   }
 
   console.log("✅ Chat carregado. Iniciando atendimento...");
-  typeAndSendMessage("Bom dia");
+  typeAndSendMessage("Bom dia!");
   setTimeout(handleBotResponse, 19000);
 }
 
